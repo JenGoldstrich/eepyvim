@@ -1,8 +1,9 @@
 -- Set leader key
-vim.g.mapleader = "," -- Comma as leader key
-
+vim.g.mapleader = ","             -- Comma as leader key
 -- Basic settings
 vim.opt.number = true             -- Show line numbers
+vim.opt.foldmethod = "indent"     -- Set indent fold, but with everything unfolded, use (za) to toggle folds
+vim.opt.foldlevelstart = 99
 vim.opt.tabstop = 4               -- Number of spaces for a tab
 vim.opt.shiftwidth = 4            -- Number of spaces for autoindent
 vim.opt.expandtab = true          -- Use spaces instead of tabs
@@ -25,9 +26,10 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+local servers = { "rust_analyzer", "gopls", "html", "cssls", "terraformls" }
 -- Setup lazy.nvim
 require("lazy").setup({
-    { "nvim-telescope/telescope.nvim",    dependencies = { "nvim-lua/plenary.nvim" } },
+    { "nvim-telescope/telescope.nvim", dependencies = { "nvim-lua/plenary.nvim" } },
     -- lsp
     {
         "neovim/nvim-lspconfig"
@@ -41,8 +43,17 @@ require("lazy").setup({
             })
         end,
     },
-    { "williamboman/mason.nvim",          config = true },
-    { "williamboman/mason-lspconfig.nvim" },
+    { "williamboman/mason.nvim",       config = true },
+    {
+        "williamboman/mason-lspconfig.nvim",
+        dependencies = { "williamboman/mason.nvim" },
+        config = function()
+            require("mason-lspconfig").setup({
+                ensure_installed = servers,
+                automatic_installation = true,
+            })
+        end,
+    },
 
     { 'NLKNguyen/papercolor-theme' },
     -- dashboard
@@ -86,7 +97,6 @@ end
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 local lspconfig = require("lspconfig")
-local servers = { "rust_analyzer", "gopls", "html", "cssls", "terraformls" }
 
 for _, server in ipairs(servers) do
     lspconfig[server].setup({
@@ -103,8 +113,8 @@ local function map(mode, lhs, rhs, opts)
     vim.keymap.set(mode, lhs, rhs, options)
 end
 
+-- Open Fzf Files window
 map('n', '<C-p>', '<cmd>:Files<cr>')
-
 -- Vim Test
 map('n', ',tf', '<cmd>:TestFile<cr>')
 map('n', ',tt', '<cmd>:TestNearest<cr>')
@@ -181,7 +191,6 @@ lspconfig.rust_analyzer.setup({
         },
     },
 })
-
 
 local alpha = require("alpha")
 local dashboard = require("alpha.themes.dashboard")
