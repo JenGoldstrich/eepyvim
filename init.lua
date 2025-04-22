@@ -1,5 +1,5 @@
 -- Set leader key
-vim.g.mapleader = "," -- Space as leader key
+vim.g.mapleader = "," -- Comma as leader key
 
 -- Basic settings
 vim.opt.number = true             -- Show line numbers
@@ -27,6 +27,7 @@ vim.opt.rtp:prepend(lazypath)
 
 -- Setup lazy.nvim
 require("lazy").setup({
+    { "nvim-telescope/telescope.nvim",    dependencies = { "nvim-lua/plenary.nvim" } },
     -- lsp
     {
         "neovim/nvim-lspconfig"
@@ -43,14 +44,15 @@ require("lazy").setup({
     { "williamboman/mason.nvim",          config = true },
     { "williamboman/mason-lspconfig.nvim" },
 
-    { "goolord/alpha-nvim" },
     { 'NLKNguyen/papercolor-theme' },
-
+    -- dashboard
+    { "goolord/alpha-nvim" },
     -- fzf
     { 'junegunn/fzf.vim' },
     { 'junegunn/fzf' },
-    { 'vim-test/vim-test' },
-    { "nvim-telescope/telescope.nvim",    dependencies = { "nvim-lua/plenary.nvim" } }
+    -- testing
+    { 'vim-test/vim-test' }
+
 })
 
 -- Set Theme as Papercolor
@@ -210,7 +212,6 @@ dashboard.section.buttons.val = {
     dashboard.button("q", "ʕノ•ᴥ•ʔノ ︵ ┻━┻  |  Touch Grass", ":qa<CR>"),
 }
 
--- Set footer
 dashboard.section.footer.val = { "" }
 
 -- Apply the dashboard configuration
