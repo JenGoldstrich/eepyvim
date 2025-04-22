@@ -32,6 +32,9 @@ require("lazy").setup({
     { "nvim-telescope/telescope.nvim", dependencies = { "nvim-lua/plenary.nvim" } },
     -- lsp
     {
+        "hrsh7th/nvim-cmp",
+    },
+    {
         "hrsh7th/cmp-nvim-lsp",
     },
     {
