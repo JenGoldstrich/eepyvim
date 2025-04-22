@@ -207,7 +207,7 @@ dashboard.section.buttons.val = {
     dashboard.button("g", "(´・ω・)っ由      |  Find Word", ":Telescope live_grep<CR>"),
     dashboard.button("c", "  (っˆڡˆς)       |  Config", ":e ~/.config/nvim/init.lua<CR>"),
     dashboard.button("u", "꒰ ꒡⌓꒡꒱        |  Update Plugins", ":Lazy sync<CR>"),
-    dashboard.button("q", "ʕノ•ᴥ•ʔノ ︵ ┻━┻  |  Quit", ":qa<CR>"),
+    dashboard.button("q", "ʕノ•ᴥ•ʔノ ︵ ┻━┻  |  Touch Grass", ":qa<CR>"),
 }
 
 -- Set footer
