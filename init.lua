@@ -32,7 +32,10 @@ require("lazy").setup({
     { "nvim-telescope/telescope.nvim", dependencies = { "nvim-lua/plenary.nvim" } },
     -- lsp
     {
-        "neovim/nvim-lspconfig"
+        "hrsh7th/cmp-nvim-lsp",
+    },
+    {
+        "neovim/nvim-lspconfig",
     },
     {
         "nvim-treesitter/nvim-treesitter",
