@@ -11,7 +11,26 @@ vim.opt.smartindent = true        -- Smart indentation
 vim.opt.wrap = false              -- Disable line wrapping
 vim.opt.termguicolors = true      -- Enable 24-bit RGB colors
 vim.opt.clipboard = "unnamedplus" -- Use system clipboard
+vim.opt.syntax = "on"
+vim.opt.errorbells = false
+vim.opt.smartcase = true
+vim.opt.showmode = false
 
+-- Silence the specific position encoding message
+local notify_original = vim.notify
+vim.notify = function(msg, ...)
+    if
+        msg
+        and (
+            msg:match 'position_encoding param is required'
+            or msg:match 'Defaulting to position encoding of the first client'
+            or msg:match 'multiple different client offset_encodings'
+        )
+    then
+        return
+    end
+    return notify_original(msg, ...)
+end
 -- Install lazy.nvim plugin manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -33,9 +52,24 @@ require("lazy").setup({
     -- lsp
     {
         "hrsh7th/nvim-cmp",
+        dependencies = {
+            "hrsh7th/cmp-nvim-lsp",     -- LSP source for nvim-cmp
+            "hrsh7th/cmp-buffer",       -- Buffer completions
+            "hrsh7th/cmp-path",         -- Path completions
+            "hrsh7th/cmp-cmdline",      -- Command-line completions
+            "L3MON4D3/LuaSnip",         -- Snippet engine
+            "saadparwaiz1/cmp_luasnip", -- Snippet completions
+        },
     },
     {
-        "hrsh7th/cmp-nvim-lsp",
+        "hrsh7th/vim-vsnip",
+
+    },
+    {
+        "onsails/lspkind.nvim"
+    },
+    {
+        "ray-x/lsp_signature.nvim",
     },
     {
         "neovim/nvim-lspconfig",
@@ -75,16 +109,18 @@ require("lazy").setup({
 -- Set Theme as Papercolor
 vim.cmd("colorscheme papercolor")
 
-
 local on_attach = function(client, bufnr)
-    local function buf_set_keymap(mode, lhs, rhs, opts)
-        opts = opts or { noremap = true, silent = true }
-        vim.api.nvim_buf_set_keymap(bufnr, mode, lhs, rhs, opts)
-    end
+    local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
+    local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
 
-    local function buf_set_option(option, value)
-        vim.api.nvim_buf_set_option(bufnr, option, value)
-    end
+    -- Mappings.
+    local opts = { noremap = true, silent = true }
+    require('lsp_signature').on_attach({
+        bind = true,
+        doc_lines = 0,
+        floating_window = false,
+        hint_scheme = 'Comment',
+    })
 
     buf_set_option("omnifunc", "v:lua.vim.l:p.omnifunc")
     buf_set_keymap('n', 'gD', '<Cmd>lua vim.lsp.buf.declaration()<CR>', opts)
@@ -96,18 +132,41 @@ local on_attach = function(client, bufnr)
     buf_set_keymap('n', '[d', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
     buf_set_keymap('n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
 
-    -- Print a message when the LSP attaches
-    print("LSP attached to buffer " .. bufnr)
+    vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+        vim.lsp.diagnostic.on_publish_diagnostics, {
+            -- disable virtual text
+            virtual_text = true,
+
+            -- show signs
+            signs = true,
+
+            -- delay update diagnostics
+            update_in_insert = true,
+        }
+    )
 end
 
-local capabilities = require("cmp_nvim_lsp").default_capabilities()
-
+local capabilities = require("cmp_nvim_lsp").default_capabilities(
+    vim.lsp.protocol.make_client_capabilities()
+)
+-- local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+capabilities.textDocument.completion.completionItem.resolveSupport = {
+    properties = {
+        'documentation',
+        'detail',
+        'additionalTextEdits',
+    }
+}
 local lspconfig = require("lspconfig")
 
 for _, server in ipairs(servers) do
     lspconfig[server].setup({
         on_attach = on_attach,
         capabilities = capabilities,
+        flags = {
+            debounce_text_changes = 150,
+        },
     })
 end
 
@@ -149,31 +208,6 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 
         vim.lsp.buf.format()
     end,
-})
-
--- Format Lua on save
-lspconfig.lua_ls.setup({
-    on_attach = function(client, bufnr)
-        -- Enable formatting on save
-        if client.server_capabilities.documentFormattingProvider then
-            vim.api.nvim_create_autocmd("BufWritePre", {
-                buffer = bufnr,
-                callback = function()
-                    vim.lsp.buf.format({ async = false })
-                end,
-            })
-        end
-    end,
-    settings = {
-        Lua = {
-            format = {
-                enable = true, -- Enable formatting
-            },
-            diagnostics = {
-                globals = { "vim" }, -- Recognize `vim` as a global
-            },
-        },
-    },
 })
 
 -- Format Rust on Save
@@ -231,3 +265,116 @@ dashboard.section.footer.val = { "" }
 
 -- Apply the dashboard configuration
 alpha.setup(dashboard.config)
+
+local cmp = require('cmp')
+local lspkind = require('lspkind')
+
+local cmp_kinds = {
+    Text = '  ',
+    Method = '  ',
+    Function = '  ',
+    Constructor = '  ',
+    Field = '  ',
+    Variable = '  ',
+    Class = '  ',
+    Interface = '  ',
+    Module = '  ',
+    Property = '  ',
+    Unit = '  ',
+    Value = '  ',
+    Enum = '  ',
+    Keyword = '  ',
+    Snippet = '  ',
+    Color = '  ',
+    File = '  ',
+    Reference = '  ',
+    Folder = '  ',
+    EnumMember = '  ',
+    Constant = '  ',
+    Struct = '  ',
+    Event = '  ',
+    Operator = '  ',
+    TypeParameter = '  ',
+}
+
+cmp.setup({
+    formatting = {
+        format = function(_, vim_item)
+            vim_item.kind = (cmp_kinds[vim_item.kind] or '') .. vim_item.kind
+            return vim_item
+        end,
+
+        -- format = lspkind.cmp_format(),
+    },
+    snippet = {
+        expand = function(args)
+            vim.fn["vsnip#anonymous"](args.body) -- For `vsnip` users.
+        end,
+    },
+    mapping = {
+        ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+        ["<Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+                cmp.select_next_item()
+            elseif vim.fn["vsnip#available"](1) == 1 then
+                feedkey("<Plug>(vsnip-expand-or-jump)", "")
+            elseif has_words_before() then
+                cmp.complete()
+            else
+                fallback() -- The fallback function sends a already mapped key. In this case, it's probably `<Tab>`.
+            end
+        end, { "i", "s" }),
+        ["<S-Tab>"] = cmp.mapping(function()
+            if cmp.visible() then
+                cmp.select_prev_item()
+            elseif vim.fn["vsnip#jumpable"](-1) == 1 then
+                feedkey("<Plug>(vsnip-jump-prev)", "")
+            end
+        end, { "i", "s" }),
+        ["<Up>"] = cmp.mapping(function()
+            if cmp.visible() then
+                cmp.select_prev_item()
+            elseif vim.fn["vsnip#jumpable"](-1) == 1 then
+                feedkey("<Plug>(vsnip-jump-prev)", "")
+            end
+        end, { "i", "s" }),
+        ["<Down>"] = cmp.mapping(function()
+            if cmp.visible() then
+                cmp.select_next_item()
+            elseif vim.fn["vsnip#jumpable"](-1) == 1 then
+                feedkey("<Plug>(vsnip-jump-prev)", "")
+            end
+        end, { "i", "s" }),
+    },
+    sources = cmp.config.sources({
+        { name = 'nvim_lsp' },
+        { name = 'vsnip' }, -- For vsnip users.
+    }, {
+        { name = 'buffer' },
+    })
+})
+
+local has_words_before = function()
+  local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+  return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+end
+
+cmp.setup.filetype({ 'markdown', 'help' }, {
+    sources = {
+        { name = 'path' },
+        { name = 'buffer' },
+    },
+    completion = {
+        autocomplete = false
+    }
+})
+
+require('nvim-treesitter.configs').setup {
+    ensure_installed = { "go", "lua", "vim", "vimdoc" },
+    highlight = {
+        enable = true,
+    },
+    indent = {
+        enable = true
+    }
+}
