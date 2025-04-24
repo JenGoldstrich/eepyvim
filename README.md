@@ -1,3 +1,4 @@
-<img width="1171" alt="Screenshot 2025-04-18 at 3 12 12 PM" src="https://github.com/user-attachments/assets/bf8343c0-5d2f-478f-996e-49173f1f143a" />
+<img width="830" alt="Screenshot 2025-04-24 at 4 41 37 PM" src="https://github.com/user-attachments/assets/db813534-44bb-454a-9112-a7241859929f" />
+
 
 Eepyvim, batteries not included
