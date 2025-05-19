@@ -63,13 +63,15 @@ require("lazy").setup({
     },
     {
         "hrsh7th/vim-vsnip",
-
     },
     {
         "onsails/lspkind.nvim"
     },
     {
         "ray-x/lsp_signature.nvim",
+    },
+    {
+        "tpope/vim-fugitive",
     },
     {
         "neovim/nvim-lspconfig",
