@@ -16,21 +16,7 @@ vim.opt.errorbells = false
 vim.opt.smartcase = true
 vim.opt.showmode = false
 
--- Silence the specific position encoding message
-local notify_original = vim.notify
-vim.notify = function(msg, ...)
-    if
-        msg
-        and (
-            msg:match 'position_encoding param is required'
-            or msg:match 'Defaulting to position encoding of the first client'
-            or msg:match 'multiple different client offset_encodings'
-        )
-    then
-        return
-    end
-    return notify_original(msg, ...)
-end
+
 -- Install lazy.nvim plugin manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -106,7 +92,9 @@ require("lazy").setup({
     -- testing
     { 'vim-test/vim-test' }
 
-})
+    })
+
+
 
 -- Set Theme as Papercolor
 vim.cmd("colorscheme papercolor")
@@ -160,16 +148,17 @@ capabilities.textDocument.completion.completionItem.resolveSupport = {
         'additionalTextEdits',
     }
 }
-local lspconfig = require("lspconfig")
-
+-- Configure LSP servers using vim.lsp.config + vim.lsp.enable
 for _, server in ipairs(servers) do
-    lspconfig[server].setup({
+    vim.lsp.config(server, {
         on_attach = on_attach,
         capabilities = capabilities,
         flags = {
             debounce_text_changes = 150,
         },
     })
+    -- Enable the config so it will start when opening matching files
+    pcall(vim.lsp.enable, server)
 end
 
 local function map(mode, lhs, rhs, opts)
@@ -212,8 +201,7 @@ vim.api.nvim_create_autocmd("BufWritePre", {
     end,
 })
 
--- Format Rust on Save
-lspconfig.rust_analyzer.setup({
+vim.lsp.config('rust_analyzer', {
     on_attach = function(client, bufnr)
         -- Enable formatting on save
         if client.server_capabilities.documentFormattingProvider then
@@ -227,12 +215,11 @@ lspconfig.rust_analyzer.setup({
     end,
     settings = {
         ["rust-analyzer"] = {
-            checkOnSave = {
-                command = "clippy", -- Optional: Run `clippy` on save for linting
-            },
+            checkOnSave = { command = "clippy" },
         },
     },
 })
+pcall(vim.lsp.enable, 'rust_analyzer')
 
 local alpha = require("alpha")
 local dashboard = require("alpha.themes.dashboard")
