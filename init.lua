@@ -201,6 +201,21 @@ vim.api.nvim_create_autocmd("BufWritePre", {
     end,
 })
 
+-- Auto fmt *.hcl files
+-- To install hcl fmt run go install github.com/hashicorp/hcl/v2/cmd/hclfmt@latest
+vim.api.nvim_create_autocmd("BufWritePost", {
+    pattern = "*.hcl",
+    callback = function()
+        if vim.fn.executable("hclfmt") == 0 then
+            vim.notify("hclfmt command not found. Install with: go install github.com/hashicorp/hcl/v2/cmd/hclfmt@latest", vim.log.levels.ERROR)
+            return
+        end
+        local file = vim.fn.expand("%:p")
+        vim.fn.system("hclfmt -w " .. vim.fn.shellescape(file))
+        vim.cmd("edit!")
+    end,
+})
+
 vim.lsp.config('rust_analyzer', {
     on_attach = function(client, bufnr)
         -- Enable formatting on save
