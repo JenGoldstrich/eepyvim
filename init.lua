@@ -67,7 +67,9 @@ require("lazy").setup({
         build = ":TSUpdate",
         config = function()
             require("nvim-treesitter.configs").setup({
+                ensure_installed = { "go", "lua", "vim", "vimdoc" },
                 highlight = { enable = true },
+                indent = { enable = true }
             })
         end,
     },
@@ -359,13 +361,3 @@ cmp.setup.filetype({ 'markdown', 'help' }, {
         autocomplete = false
     }
 })
-
-require('nvim-treesitter.configs').setup {
-    ensure_installed = { "go", "lua", "vim", "vimdoc" },
-    highlight = {
-        enable = true,
-    },
-    indent = {
-        enable = true
-    }
-}
