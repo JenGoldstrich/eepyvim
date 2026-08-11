@@ -31,7 +31,7 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-local servers = { "rust_analyzer", "gopls", "html", "cssls", "terraformls" }
+local servers = { "rust_analyzer", "gopls", "html", "cssls", "terraformls", "ruby_lsp" }
 -- Setup lazy.nvim
 require("lazy").setup({
     { "nvim-telescope/telescope.nvim", dependencies = { "nvim-lua/plenary.nvim" } },
